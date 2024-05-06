@@ -53,7 +53,7 @@ function AuthenticatedRoutes({ handleSignOut }) {
     <>
       <Navbar handleSignOut={handleSignOut} /> {/* Ensure Navbar is correctly referenced */}
       <Routes>
-        {/* <Route path="/" element={<Landing />} /> */}
+        <Route path="/" element={<Landing />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/order" element={<Dashboard />} />
         <Route path="/report" element={<DashboardReport />} />
