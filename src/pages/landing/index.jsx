@@ -2,7 +2,7 @@ import Navbar from '../../components/navbar';
 import Home from './landing-home';
 import About from './landing-about';
 import Contact from './landing-contact_us';
-import Footer from './landing-footer';
+import Footer from '../../components/footer';
 import Inbox from './landing-inbox';
 
 export default function Landing() {

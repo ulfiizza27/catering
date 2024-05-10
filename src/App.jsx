@@ -8,6 +8,7 @@ import Login from "./pages/login";
 import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
 import DashboardReport from './pages/dashboard/dashboard-report';
+import DashboardChatai from './pages/dashboard/dashboard-chatai';
 import 'tailwindcss/tailwind.css';
 
 function App() {
@@ -57,6 +58,7 @@ function AuthenticatedRoutes({ handleSignOut }) {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/order" element={<Dashboard />} />
         <Route path="/report" element={<DashboardReport />} />
+        <Route path="/chatai" element={<DashboardChatai />} />
       </Routes>
     </>
   );

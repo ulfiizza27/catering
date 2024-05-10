@@ -41,6 +41,7 @@ export default function Navbar() {
                         <ul className="flex justify-center space-x-6">
                             <RouterLink to="/order" className="font-inter hover:text-yellow-500 font-bold text-base" style={{ cursor: 'pointer' }}>Order</RouterLink>
                             <RouterLink to="/report" className="font-inter hover:text-yellow-500 font-bold text-base" style={{ cursor: 'pointer' }}>Report</RouterLink>
+                            <RouterLink to="/chatai" className="font-inter hover:text-yellow-500 font-bold text-base" style={{ cursor: 'pointer' }}>Chat</RouterLink>
                         </ul>
                         </>
                     ) : (
@@ -58,12 +59,13 @@ export default function Navbar() {
                         </div>
                     ) : (
                         <div>
-                            <RouterLink to="/login" className="font-inter border border-yellow-500 text-black px-4 py-1 rounded-lg mr-6 hover:bg-yellow-500 hover:text-white font-bold text-base" style={{ cursor: 'pointer' }}>Login</RouterLink>
-                            <RouterLink to="/register" className="font-inter border border-yellow-500 text-black px-4 py-1 rounded-lg hover:bg-yellow-500 hover:text-white font-bold text-base" style={{ cursor: 'pointer' }}>Register</RouterLink>
+                            <RouterLink to="/login" className="font-inter border border-yellow-500 text-black px-[10px] py-2 rounded-lg mr-6 hover:bg-yellow-500 hover:text-white font-bold text-base" style={{ cursor: 'pointer' }}>Login</RouterLink>
+                            <RouterLink to="/register" className="font-inter border border-yellow-500 text-black px-[10px] py-2 rounded-lg hover:bg-yellow-500 hover:text-white font-bold text-base" style={{ cursor: 'pointer' }}>Register</RouterLink>
                         </div>
                     )}
                 </div>
             </nav>
+            <hr />
         </div>
     );
 }

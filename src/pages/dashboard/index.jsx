@@ -20,7 +20,7 @@ export default function Dashboard() {
         description: '',
         price: ''
     });
-    const [editMenu, setEditMenu] = useState(null); 
+    const [editMenu, setEditMenu] = useState(null);
 
     useEffect(() => {
         fetchMenuData();
@@ -32,10 +32,6 @@ export default function Dashboard() {
 
     const handleDescriptionCollapse = (menuIndex) => {
         setExpandedDescription(menuIndex === expandedDescription ? null : menuIndex);
-    }
-
-    const handlePrintReceipt = () => {
-        setShowReceiptModal(true);
     }
 
     const truncateDescription = (description) => {
@@ -142,85 +138,109 @@ export default function Dashboard() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        // Jika name adalah price atau quantity, konversi value menjadi number
-        const newValue = (name === 'price' || name === 'quantity') ? parseFloat(value) : value;
-
-        // Update formData
+        // Jika name adalah price, konversi value menjadi number
+        const newValue = name === 'price' ? parseFloat(value) : value;
         setFormData({
             ...formData,
             [name]: newValue
         });
-
-        // Hitung total price jika name adalah price atau quantity
-        if (name === 'price' || name === 'quantity') {
-            const totalPrice = parseFloat(formData.price) * parseFloat(formData.quantity);
-            setFormData(prevState => ({
-                ...prevState,
-                totalPrice: totalPrice
-            }));
-        }
     };
 
-    // State tambahan untuk menyimpan jumlah yang diinput pengguna
-    const [quantity, setQuantity] = useState(1);
+    const [selectedMenu, setSelectedMenu] = useState(null);
+    const [orderQuantity, setOrderQuantity] = useState(1);
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [currentOrder, setCurrentOrder] = useState(null);
 
-    // Fungsi untuk menghitung total harga
-    const calculateTotalPrice = () => {
-        if (editMenu && editMenu.price && quantity) {
-            const totalPrice = editMenu.price * quantity;
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalPrice);
-        } else {
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(0);
+    useEffect(() => {
+        if (selectedMenu) {
+            const totalPrice = selectedMenu.price * orderQuantity;
+            setTotalPrice(totalPrice);
         }
+    }, [selectedMenu, orderQuantity, formData.orderDate, formData.pickupDate]);    
+    
+    const handleMenuSelect = (menu) => {
+        setSelectedMenu(menu);
     };
     
-    const handleSaveOrder = async () => {
+    const handleQuantityChange = (e) => {
+        setOrderQuantity(parseInt(e.target.value));
+    };
+    
+    const handleAddOrder = async () => {
         try {
-            // Pastikan editMenu tidak null sebelum mengakses propertinya
-            if (editMenu) {
-                const totalPrice = editMenu.price * quantity;
-                const orderData = {
-                    orderDate: formData.orderDate,
-                    pickupDate: formData.pickupDate,
-                    quantity,
-                    totalPrice
-                };
-                await addDoc(collection(db, 'order'), orderData);
-                setShowOrderModal(false);
-                alert('Order added successfully!');
-            } else {
-                alert('Please select a menu to add an order.');
-            }
+            // Simpan data pesanan ke dalam Firestore
+            const newOrderRef = await addDoc(collection(db, 'order'), {
+                orderDate: formData.orderDate,
+                pickupDate: formData.pickupDate,
+                quantity: orderQuantity,
+                totalPrice: totalPrice,
+                menuId: selectedMenu.id // Tambahkan properti menuId
+            });
+    
+            // Ambil ID pesanan yang baru ditambahkan
+            const orderId = newOrderRef.id;
+    
+            // Setel data pesanan saat ini ke data yang baru ditambahkan
+            setCurrentOrder({
+                id: orderId,
+                orderDate: formData.orderDate,
+                pickupDate: formData.pickupDate,
+                quantity: orderQuantity,
+                totalPrice: totalPrice,
+                name: selectedMenu.name // Tambahkan nama menu ke dalam currentOrder
+            });
+    
+            // Reset form setelah penyimpanan berhasil
+            setShowOrderModal(false);
+            setFormData({
+                ...formData,
+                orderDate: '', // Reset tanggal pesanan setelah disimpan
+                pickupDate: '' // Reset tanggal pengambilan setelah disimpan
+            });
+    
+            // Tampilkan pesan berhasil
+            alert('Order added successfully!');
         } catch (error) {
             console.error("Error adding order:", error);
             alert('Failed to add order. Please try again later.');
         }
     };    
-    
 
-    // Fungsi untuk menangani perubahan pada input jumlah
-    const handleQuantityChange = (e) => {
-        const { value } = e.target;
-        setQuantity(value);
-        setFormData(prevState => ({
-            ...prevState,
-            quantity: parseFloat(value)
-        }));
+    const handlePrintOrderReceipt = () => {
+        setShowReceiptModal(true);
+    };
+
+    const handleDateChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({
+            ...formData,
+            [name]: value
+        });
+    };
+
+    const handleSaveAndPrintReceipt = async () => {
+        try {
+            await handleAddOrder(); 
+            handlePrintOrderReceipt(); 
+        } catch (error) {
+            console.error("Error saving order and printing receipt:", error);
+            alert('Failed to save order or print receipt. Please try again later.');
+        }
     };
     
-
+    
     return (
         <>
             <Navbar />
-
+            
             <div className="container mx-auto pt-32">
                 <div className="text-center mb-5">
                     <h1 className="text-4xl font-semibold text-black mb-2">Menu List</h1>
-                    <hr className="w-36 mx-auto border-t-4 border-yellow-500 mb-5" />
+                    <hr className="w-36 mx-auto border-t-4 border-[#E5AF10]" />
                 </div>
-                <div className="flex justify-end mb-6">
-                    <button onClick={() => setShowModal(true)} className="bg-yellow-400 text-gray-900 rounded-full py-2 px-3">
-                        <FontAwesomeIcon icon={faPlus} className=" h-6" />
+                <div className="flex justify-end mb-10">
+                    <button onClick={() => setShowModal(true)} className="bg-[#E5AF10] text-gray-900 rounded-full py-2 px-3">
+                        <FontAwesomeIcon icon={faPlus} className="h-7" />
                     </button>
                 </div>
                 <div className="grid grid-cols-12 gap-6">
@@ -238,9 +258,9 @@ export default function Dashboard() {
                                     )}
                                 </p>
                                 <div className="flex justify-between items-center mb-5">
-                                    <span className="font-medium text-xl">{menu.price}</span>
-                                    <div className="flex space-x-4">
-                                        <button onClick={() => handleEdit(menu)} className="bg-yellow-500 rounded-full p-2 px-3">
+                                    <span className="font-medium text-xl">Rp. {menu.price}</span>
+                                    <div className="flex space-x-3">
+                                        <button onClick={() => handleEdit(menu)} className="bg-[#E5AF10]  rounded-full p-2 px-3">
                                             <FontAwesomeIcon icon={faEdit} className="text-gray-700" />
                                         </button>
                                         <button onClick={() => handleDeleteMenu(menu.id)} className="bg-red-600 rounded-full p-2 px-3">
@@ -249,7 +269,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                                 <div className="text-center">
-                                    <button onClick={handleOrderModalToggle} className="bg-yellow-500 text-white rounded-lg px-2 py-2 text-center font-bold">Add Order</button>
+                                    <button onClick={() => { handleMenuSelect(menu); handleOrderModalToggle(); }} className="bg-[#E5AF10] text-white rounded-lg px-3 py-2 text-center font-bold">Add Order</button>
                                 </div>
                             </div>
                         </div>
@@ -261,38 +281,39 @@ export default function Dashboard() {
                         <div className="bg-white rounded-lg p-8 max-w-md w-full">
                             <h2 className="text-2xl font-semibold mb-4">Order Form</h2>
                             <form>
-                                <div className="mb-4">
-                                    <label htmlFor="orderDate" className="block text-sm font-medium text-gray-700">Order Date</label>
-                                    <input type="date" id="orderDate" name="orderDate" className="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
-                                </div>
-                                <div className="mb-4">
-                                    <label htmlFor="pickupDate" className="block text-sm font-medium text-gray-700">Pickup Date</label>
-                                    <input type="date" id="pickupDate" name="pickupDate" className="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
-                                </div>
+                            <div className="mb-4">
+                                <label htmlFor="orderDate" className="block text-sm font-medium text-gray-700">Order Date</label>
+                                <input
+                                    type="datetime-local"
+                                    id="orderDate"
+                                    name="orderDate"
+                                    value={formData.orderDate} // Atur nilai dari state formData
+                                    onChange={handleDateChange} // Gunakan fungsi handleDateChange untuk menangani perubahan
+                                    className="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label htmlFor="pickupDate" className="block text-sm font-medium text-gray-700">Pickup Date</label>
+                                <input
+                                    type="datetime-local"
+                                    id="pickupDate"
+                                    name="pickupDate"
+                                    value={formData.pickupDate} // Atur nilai dari state formData
+                                    onChange={handleDateChange} // Gunakan fungsi handleDateChange untuk menangani perubahan
+                                    className="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                />
+                            </div>
                                 <div className="mb-4">
                                     <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">Quantity</label>
-                                    <input 
-                                        type="number" 
-                                        id="quantity" 
-                                        name="quantity" 
-                                        min="1" 
-                                        value={quantity} 
-                                        onChange={handleQuantityChange} 
-                                        className="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
-                                    />
+                                    <input type="number" id="quantity" name="quantity" min="1" value={orderQuantity} onChange={handleQuantityChange} className="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                                 </div>
                                 <div className="mb-4">
                                     <label htmlFor="totalPrice" className="block text-sm font-medium text-gray-700">Total Price</label>
-                                    <div className="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                        {calculateTotalPrice()}
-                                    </div>
+                                    <input type="text" id="totalPrice" name="totalPrice" readOnly value={totalPrice} className="mt-1 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
                                 </div>
                                 <div className="flex justify-end">
-                                    <button onClick={handleSaveOrder} type="button" className="bg-blue-500 text-white px-4 py-2 rounded-md mr-2">Save</button>
-                                    <button onClick={handlePrintReceipt} type="button" className="bg-yellow-500 text-white px-4 py-2 rounded-md flex items-center justify-center">
-                                        Print <FontAwesomeIcon icon={faPrint} className="ml-2" />
-                                    </button>
-                                    <button type="button" onClick={handleOrderModalToggle} className="ml-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-md">Cancel</button>
+                                    <button onClick={handleSaveAndPrintReceipt} type="button" className="ml-2 bg-[#E5AF10] text-white px-4 py-2 rounded-md mr-2">Print <FontAwesomeIcon icon={faPrint} className="ml-2" /></button>
+                                    <button type="button" onClick={() => setShowOrderModal(false)} className="ml-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-md">Cancel</button>
                                 </div>
                             </form>
                         </div>
@@ -348,7 +369,7 @@ export default function Dashboard() {
                                     />
                                 </div>
                                 <div className="flex justify-end">
-                                    <button onClick={handleAddMenu} type="button" className="bg-yellow-500 text-white px-4 py-2 rounded-md">Add Menu</button>
+                                    <button onClick={handleAddMenu} type="button" className="bg-[#E5AF10] text-white px-4 py-2 rounded-md">Add Menu</button>
                                     <button type="button" onClick={() => setShowModal(false)} className="ml-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-md">Cancel</button>
                                 </div>
                             </form>
@@ -405,7 +426,7 @@ export default function Dashboard() {
                                     />
                                 </div>
                                 <div className="flex justify-end">
-                                    <button onClick={handleEditMenu} type="button" className="bg-yellow-500 text-white px-4 py-2 rounded-md">Save Changes</button>
+                                    <button onClick={handleEditMenu} type="button" className="bg-[#E5AF10] text-white px-4 py-2 rounded-md">Save Changes</button>
                                     <button type="button" onClick={() => setEditMenu(null)} className="ml-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-md">Cancel</button>
                                 </div>
                             </form>
@@ -413,8 +434,8 @@ export default function Dashboard() {
                     </div>
                 )}
                 {/* Receipt Modal */}
-                {showReceiptModal && (
-                    <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+                {showReceiptModal && currentOrder && (
+                <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
                     <div className="bg-white rounded-lg p-8 max-w-md w-full relative">
                         <button onClick={() => setShowReceiptModal(false)} className="absolute top-0 right-0 m-4 bg-red-500 text-white px-2 rounded-full">
                             <FontAwesomeIcon icon={faTimes} />
@@ -423,16 +444,23 @@ export default function Dashboard() {
                             <img src={Logo} alt="Logo" className="h-16 mx-auto mb-4" />
                         </div>
                         <div className="mb-4">
-                            <h2 className="text-xl font-semibold mb-2 text-center">Order Details</h2>
-                                <p><strong>Order Date:</strong> 2024-05-03</p>
-                                <p><strong>Pickup Date:</strong> 2024-05-05</p>
-                                <p><strong>Quantity:</strong> 2</p>
-                                <p><strong>Total Price:</strong> Rp 90.000</p>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 ps-5">
+                                <p className="font-semibold">Menu:</p>
+                                <p>{currentOrder.name}</p>
+                                <p className="font-semibold">Order Date:</p>
+                                <p>{new Date(currentOrder.orderDate).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                                <p className="font-semibold">Pickup Date:</p>
+                                <p>{new Date(currentOrder.pickupDate).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                                <p className="font-semibold">Quantity:</p>
+                                <p>{currentOrder.quantity}</p>
+                                <p className="font-semibold">Total Price:</p>
+                                <p>Rp. {currentOrder.totalPrice}</p>
+                            </div>
                         </div>
-                        <p className="mt-5 text-center">Thank you for your order🤩</p>
+                        <p className="mt-6 text-center">Thank you for your order🤩</p>
                     </div>
                 </div>
-                )}
+            )}
             </div>
         </>
     );
